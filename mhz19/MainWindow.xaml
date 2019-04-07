@@ -1,0 +1,16 @@
+﻿<Window x:Class="mhz19.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:mhz19"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Button Content="Connect" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Command="{Binding Start}"/>
+        <Button Content="Disconnect" HorizontalAlignment="Left" Margin="90,10,0,0" VerticalAlignment="Top" Width="75" Command="{Binding Stop}"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,35,0,0" TextWrapping="Wrap" Text="{Binding Ppm}" VerticalAlignment="Top" FontSize="30"/>
+        <oxy:PlotView Model="{Binding Plot}" Margin="10,100,10,50"/>
+    </Grid>
+</Window>
