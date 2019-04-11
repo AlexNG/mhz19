@@ -1,10 +1,10 @@
-﻿namespace mhz19
+﻿namespace Mhz.Core
 {
     public class Config
     {
         public Config()
         {
-            AutoConnect = true;
+            this.AutoConnect = true;
         }
 
         public bool AutoConnect { get; set; }
