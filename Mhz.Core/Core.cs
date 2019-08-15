@@ -1,40 +1,31 @@
 ﻿using System;
+using System.IO.Ports;
 using System.Threading;
 
 namespace Mhz.Core
 {
-    using System.IO.Ports;
-    using System.Reactive.Linq;
-
-    public class Core : IDisposable
+    public class Core : IDisposable, ICore
     {
         private readonly byte[] _command = { 0xff, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79 };
 
-        private static Core _instance;
-
         private readonly SerialPort _port;
 
-        public static Config Config { get; set; }
+        public IConfig Config { get; set; }
 
-        public volatile int Ppm;
+        volatile int ppm;
 
-        private Core()
+        public int Ppm => ppm;
+
+        public Core(IConfig config)
         {
+            Config = config;
             _port = new SerialPort { BaudRate = 9600, DataBits = 8, StopBits = StopBits.One, Parity = Parity.None, PortName = "COM" + Config.ComPortNumber };
         }
 
-        public IObservable<int> GetPpm()
+        public int SendCommandAndGetPpm()
         {
             if (!_port.IsOpen)
                 _port.Open();
-
-            return Observable.Interval(TimeSpan.FromSeconds(Config.QueryInterval)).StartWith(0).Select(_ => SendCommandAndGetPpm());
-        }
-
-        private int SendCommandAndGetPpm()
-        {
-            if (!_port.IsOpen)
-                return -1;
 
             var ppm = 0;
             _port.Write(_command, 0, 9);
@@ -58,11 +49,9 @@ namespace Mhz.Core
                 ppm = buffer[2] * 256 + buffer[3];
             }
 
-            Ppm = ppm;
+            this.ppm = ppm;
             return ppm;
         }
-
-        public static Core Instance => _instance ?? (_instance = new Core());
 
         public void Dispose()
         {

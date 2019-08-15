@@ -1,9 +1,6 @@
 ﻿using System;
-using System.IO;
 using System.Reactive.Linq;
-using System.Reflection;
 using System.Windows;
-using Microsoft.Extensions.Configuration;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
@@ -19,19 +16,17 @@ namespace mhz19
     /// </summary>
     public partial class MainWindow
     {
+        private IConfig Config { get; }
+        private ICore Core { get; }
+
         public MainWindow()
         {
             InitializeComponent();
-            Core.Config = new Config();
-            new ConfigurationBuilder()
-                .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location))
-                .AddJsonFile("appsettings.json")
-                .Build()
-                .GetSection("ApplicationConfiguration")
-                .Bind(Core.Config);
-            var model = new MainWindowViewModel(Core.Config);
+            Config = new Config();
+            Core = new Core(Config);
+            var model = new MainWindowViewModel(Config, Core);
             DataContext = model;
-            if (Core.Config.AutoConnect)
+            if (Config.AutoConnect)
             {
                 model.Start.Execute(null);
             }
@@ -48,9 +43,9 @@ namespace mhz19
 
         public PlotModel Plot { get; }
 
-        public MainWindowViewModel(Config config)
+        public MainWindowViewModel(IConfig config, ICore core)
         {
-            dataWindow = new DataWindow(config.StabilizationInterval / Config.QueryInterval, config.WarningLevel, config.StabilizationInterval)
+            dataWindow = new DataWindow(config.StabilizationInterval / config.QueryInterval, config.WarningLevel, config.StabilizationInterval)
             {
                 Event = (sender, eventArgs) => MessageBox.Show($"{eventArgs} > {config.WarningLevel}", "CO2", MessageBoxButton.OK, MessageBoxImage.Exclamation)
             };
@@ -63,7 +58,9 @@ namespace mhz19
 
             Plot.Series.Add(new LineSeries { ItemsSource = Items });
 
-            Start = ReactiveCommand.CreateAsyncObservable(_ => Core.Instance.GetPpm().TakeUntil(Stop));
+            Start = ReactiveCommand.CreateAsyncObservable(_ =>
+                Observable.Interval(TimeSpan.FromSeconds(config.QueryInterval)).StartWith(0).Select(__ => core.SendCommandAndGetPpm())
+                .TakeUntil(Stop));
             Start.ThrownExceptions.Subscribe(e => Console.WriteLine(e.Message));
 
             Stop = ReactiveCommand.Create(Start.IsExecuting);
@@ -77,6 +74,8 @@ namespace mhz19
                 dataWindow.Add(newValue);
             });
         }
+
+
 
         private ReactiveList<DataPoint> Items { get; } = new ReactiveList<DataPoint>();
 

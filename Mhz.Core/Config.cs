@@ -1,20 +1,38 @@
-﻿namespace Mhz.Core
+﻿using System.IO;
+using System.Reflection;
+using Microsoft.Extensions.Configuration;
+
+namespace Mhz.Core
 {
-    public class Config
+    public class Config : IConfig
     {
         public Config()
         {
-            this.AutoConnect = true;
+            Load();
         }
 
-        public bool AutoConnect { get; set; }
+        public void Load()
+        {
+            new ConfigurationBuilder()
+                .SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location))
+                .AddJsonFile("appsettings.json")
+                .Build()
+                .GetSection("ApplicationConfiguration")
+                .Bind(this);
+        }
+
+        public bool AutoConnect { get; set; } = true;
 
         public int ComPortNumber { get; set; }
 
-        public static readonly int QueryInterval = 10; // seconds
+        /// <summary>
+        /// Seconds
+        /// </summary>
+        public int QueryInterval => 10;
 
-        public int StabilizationInterval { get; set; } = 300; // seconds
+        public int StabilizationInterval { get; set; } = 300;
 
-        public int WarningLevel { get; set; } = 1000; // PPM
+        /// <inheritdoc />
+        public int WarningLevel { get; set; } = 1000;
     }
 }
